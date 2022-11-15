@@ -9,7 +9,7 @@ async function main() {
     const routerAddress = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1";
     const router = await ethers.getContractAt("Router", routerAddress);
 
-    console.assert(router.address,"0xD99D1c33F9fC3444f8101754aBC46c52416550D1");
+    console.assert(router.address, "0xD99D1c33F9fC3444f8101754aBC46c52416550D1");
 
     const token1Factory = await ethers.getContractFactory("Token1");
     let token1 = await token1Factory.deploy();
@@ -23,12 +23,18 @@ async function main() {
 
     // const pairAddress = await factory.createPair.call(factory,token1.address, token2.address);
     const tx = await factory.createPair(token1.address, token2.address);
+    await tx.wait(1);
+    console.log("TX$", tx);
     const pairAddress = await factory.getPair(token1.address, token2.address);
+    console.log("Pair$", pairAddress);
 
-    await token1.approve(router.address, 10000);
-    await token2.approve(router.address, 10000);
+    let approve1_tx = await token1.approve(router.address, 10000);
+    await approve1_tx.wait(1);
 
-    await router.addLiquidity(
+    let approve2_tx = await token2.approve(router.address, 10000);
+    await approve2_tx.wait(1);
+
+    let liquidity_tx = await router.addLiquidity(
         token1.address,
         token2.address,
         10000,
@@ -38,6 +44,7 @@ async function main() {
         signer.address,
         Math.floor(Date.now() / 1000) + 60 * 10
     );
+    await liquidity_tx.wait(1);
 
     const pair = await ethers.getContractAt("Pair", pairAddress);
 
