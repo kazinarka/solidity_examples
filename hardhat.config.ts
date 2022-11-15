@@ -1,46 +1,48 @@
-import { HardhatUserConfig } from "hardhat/config";
+import {HardhatUserConfig} from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
-  networks: {
-    localhost: {
-      url: "http://127.0.0.1:8545"
+    defaultNetwork: "hardhat",
+
+    networks: {
+        localhost: {
+            url: "http://127.0.0.1:8545"
+        },
+        hardhat: {
+            chainId: 31337
+        },
+        testnet: {
+            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+            chainId: 97,
+            gasPrice: 20000000000,
+            gas: 2100000,
+            accounts: ["800d4e3d63116ea1e0f878bd5a1a96ab1fadb1df3e3a46e5e11284c329371098"]
+            // accounts: ["8aad92813dcde75aa2e6f46e80f6bb69197489473ed556289398c23de46205fb"]
+        },
+        mainnet: {
+            url: "https://bsc-dataseed.binance.org/",
+            chainId: 56,
+            gasPrice: 20000000000,
+            accounts: ["8aad92813dcde75aa2e6f46e80f6bb69197489473ed556289398c23de46205fb"]
+        }
     },
-    hardhat: {
-      chainId: 31337
+    solidity: {
+        version: "0.8.0",
+        settings: {
+            optimizer: {
+                enabled: true
+            }
+        }
     },
-    testnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-      chainId: 97,
-      gasPrice: 20000000000,
-      accounts: ["800d4e3d63116ea1e0f878bd5a1a96ab1fadb1df3e3a46e5e11284c329371098"]
-      // accounts: ["8aad92813dcde75aa2e6f46e80f6bb69197489473ed556289398c23de46205fb"]
+    paths: {
+        sources: "./contracts",
+        tests: "./test",
+        cache: "./cache",
+        artifacts: "./artifacts"
     },
-    mainnet: {
-      url: "https://bsc-dataseed.binance.org/",
-      chainId: 56,
-      gasPrice: 20000000000,
-      accounts: ["8aad92813dcde75aa2e6f46e80f6bb69197489473ed556289398c23de46205fb"]
+    mocha: {
+        timeout: 20000
     }
-  },
-  solidity: {
-    version: "0.8.0",
-    settings: {
-      optimizer: {
-        enabled: true
-      }
-    }
-  },
-  paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts"
-  },
-  mocha: {
-    timeout: 20000
-  }
 };
 
 export default config;
