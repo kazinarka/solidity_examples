@@ -1,20 +1,28 @@
 import {ethers} from "hardhat";
+import {Network, router_factory} from "./utils/network"
+import {address} from "hardhat/internal/core/config/config-validation";
 
 async function main() {
     let [signer] = await ethers.getSigners();
 
-    const factoryAddress = "0x6725F303b657a9451d8BA641348b6761A6CC7a17";
+    // Get addresses of Pancakeswap contracts
+    const [routerAddress,factoryAddress] = router_factory(Network.Testnet);
+
+    // Derive Pancakeswap  contract, that store and create token pair
+    //https://github.com/pancakeswap/pancake-smart-contracts/blob/master/projects/exchange-protocol/contracts/PancakeFactory.sol
     const factory = await ethers.getContractAt("Factory", factoryAddress);
 
-    const routerAddress = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1";
+    // Derive Pancakeswap  contract, that creates new liquidity
+    //https://github.com/pancakeswap/pancake-smart-contracts/blob/master/projects/exchange-protocol/contracts/PancakeRouter.sol
     const router = await ethers.getContractAt("Router", routerAddress);
 
-    console.assert(router.address, "0xD99D1c33F9fC3444f8101754aBC46c52416550D1");
+    if ( await ethers.provider.getCode("Token1") === ethers.constants.AddressZero) {
 
-    const token1Factory = await ethers.getContractFactory("Token1");
-    let token1 = await token1Factory.deploy();
-    await token1.deployed();
-    console.log(`Token1 Deployed at:${token1.address}`)
+        const token1Factory = await ethers.getContractFactory("Token1");
+        let token1 = await token1Factory.deploy();
+        await token1.deployed();
+        console.log(`Token1 Deployed at:${token1.address}`)
+    }
 
     const token2Factory = await ethers.getContractFactory("Token2");
     let token2 = await token2Factory.deploy();
@@ -22,11 +30,10 @@ async function main() {
     console.log(`Token2 Deployed at:${token2.address}`)
 
     // const pairAddress = await factory.createPair.call(factory,token1.address, token2.address);
-    const tx = await factory.createPair(token1.address, token2.address);
-    await tx.wait(1);
-    console.log("TX$", tx);
-    const pairAddress = await factory.getPair(token1.address, token2.address);
-    console.log("Pair$", pairAddress);
+    // const tx = await factory.createPair(token1.address, token2.address);
+    // await tx.wait(1);
+    // console.log("TX$", tx);
+
 
     let approve1_tx = await token1.approve(router.address, 10000);
     await approve1_tx.wait(1);
@@ -44,6 +51,9 @@ async function main() {
         signer.address,
         Math.floor(Date.now() / 1000) + 60 * 10
     );
+
+    const pairAddress = await factory.getPair(token1.address, token2.address);
+    console.log("Pair$", pairAddress);
     await liquidity_tx.wait(1);
 
     const pair = await ethers.getContractAt("Pair", pairAddress);

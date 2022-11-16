@@ -19,40 +19,37 @@ contract CreateLiquidity
     }
 
     function createLiquidity(
-        IERC20 tokenA,
-        IERC20 tokenB,
+        ERC20 tokenA,
+        ERC20 tokenB,
         uint amountADesired,
         uint amountBDesired,
         uint amountAMin,
         uint amountBMin,
         uint deadline
-    ) external payable returns (address)
+    ) external  returns (address)
     {
+
 
 //        uint allowance_a = tokenA.allowance(msg.sender, address(this));
 //        uint allowance_b = tokenB.allowance(msg.sender, address(this));
-//
+
 //        require(allowance_a == amountADesired
 //            && allowance_b == amountBDesired,
 //            "Not enough tokens");
 
 
-//        tokenA._transfer(msg.sender, address(this), amountADesired);
+//        tokenA.transferFrom(msg.sender, address(this), amountADesired);
 //
-//        tokenB._transfer(msg.sender, address(this), amountBDesired);
+//        tokenB.transferFrom(msg.sender, address(this), amountBDesired);
 
-        console.log("Step 1 ");
         tokenA.approve(address (router), amountADesired);
-        console.log("Step 2 ");
+
         tokenB.approve(address (router), amountBDesired);
-
-        address pair_address = factory.getPair(address (tokenA), address (tokenB));
-
+//
+        address pair_address = factory.getPair(address (tokenA),address (tokenB));
         if (pair_address == address(0)) {
-            pair_address = factory.createPair(address (tokenA), address (tokenB));
+           address pair_address = factory.createPair(address (tokenA), address (tokenB));
         }
-        console.log("Step 3 ");
-
         router.addLiquidity(
             address (tokenA),
             address (tokenB),
@@ -63,8 +60,7 @@ contract CreateLiquidity
             msg.sender,
             deadline
         );
-
         return pair_address;
     }
-    receive() external payable {}
+//    receive() external payable {}
 }
