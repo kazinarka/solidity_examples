@@ -1,6 +1,11 @@
 import {HardhatUserConfig} from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
+const dotenv = require("dotenv");
+dotenv.config({path: __dirname + '/.env'});
+
+const PRIVATE_KEY: string = process.env.PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",
 
@@ -9,21 +14,22 @@ const config: HardhatUserConfig = {
             url: "http://127.0.0.1:8545"
         },
         hardhat: {
-            chainId: 31337
+            forking: {
+                url: "https://eth-mainnet.g.alchemy.com/v2/ItpxQ-mxhCcBqRxuoG84tY1YfUlmpgPa",
+            }
         },
         testnet: {
             url: "https://data-seed-prebsc-1-s1.binance.org:8545",
             chainId: 97,
             gasPrice: 20000000000,
             gas: 2100000,
-            accounts: ["800d4e3d63116ea1e0f878bd5a1a96ab1fadb1df3e3a46e5e11284c329371098"]
-            // accounts: ["8aad92813dcde75aa2e6f46e80f6bb69197489473ed556289398c23de46205fb"]
+            accounts: [PRIVATE_KEY]
         },
         mainnet: {
             url: "https://bsc-dataseed.binance.org/",
             chainId: 56,
             gasPrice: 20000000000,
-            accounts: ["8aad92813dcde75aa2e6f46e80f6bb69197489473ed556289398c23de46205fb"]
+            accounts: [PRIVATE_KEY]
         }
     },
     solidity: {
