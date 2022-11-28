@@ -1,8 +1,7 @@
 declare global {
     namespace NodeJS {
         interface ProcessEnv {
-            PRIVATE_KEY: string;
-
+            ALCHEMY_PROVIDER: string;
         }
     }
 }

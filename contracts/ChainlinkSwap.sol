@@ -7,43 +7,49 @@ import "./PriceConsumer.sol";
 contract ChainlinkSwap is Ownable {
     using PriceConsumer for address;
 
+    // fees that go to protocol owner.
+    // default is 0.3% (1030/1000)
+    // denominated in 1000s for safer divisions
     uint256 internal swapFee = 1030;
 
+    // mapping of supported assets to its chainlink pricefeed
     mapping(address => address) internal _tokenToPricefeed;
 
+    // mapping of supported assets to their individual fees, if not set, swapFee will be used
+    // to set to 0, simply set the particular assets fee to 1000
     mapping(address => uint256) internal _tokenSwapFee;
 
-    mapping(address => bool) internal _blacklisted;
-
+    // Events
     event TokenSwapped(address indexed tokenBought, address indexed tokenSold, uint256 amountBought, uint256 amountSold);
     event TokenMapped(address indexed tokenAddress, address indexed pricefeedAddress);
     event LiquidityProvided(address indexed tokenAddress, uint256 indexed amount, address provider);
     event LiquidityWithdrawn(address indexed tokenAddress, uint256 indexed amount, address withdrawnTo);
-    event BlacklistStateChanged(address indexed blacklistedAddress, bool indexed newState, address blacklister);
     event SwapFeeChanged(uint256 indexed newFee, address owner);
     event TokenSwapFeeChanged(address indexed tokenAddress, uint256 indexed newFee, address owner);
 
+    // show dedicated chainlink pricefeed of the token
     function tokenToPricefeed (address tokenAddress) external view returns (address) {
         return _tokenToPricefeed[tokenAddress];
     }
 
-    function blacklisted (address userAddress) external view returns (bool) {
-        return _blacklisted[userAddress];
-    }
-
+    // returns the current swapFee
     function getSwapFee () external view returns (uint256) {
         return swapFee;
     }
 
+    // returns the current swapFee of token
     function getTokenFee (address tokenAddress) external view returns (uint256) {
         return _tokenSwapFee[tokenAddress];
     }
 
+    // map the token with pricefeed
     function setPricefeed ( address tokenAddress, address pricefeedAddress ) external onlyOwner {
         _tokenToPricefeed[tokenAddress] = pricefeedAddress;
         emit TokenMapped(tokenAddress, pricefeedAddress);
     }
 
+    // change default swap fee
+    // note - should never be set to any value below 1000 except 0, both of which indicate no fees.
     function changeDefaultSwapfee (uint256 newFee) external onlyOwner {
         require(
             newFee > 1000 || newFee == 0,
@@ -53,6 +59,10 @@ contract ChainlinkSwap is Ownable {
         emit SwapFeeChanged(newFee, msg.sender);
     }
 
+    // change swap fee of a token
+    // note - should never be set to any value below 1000 except 0, however both do not necessarily indicate no fees.
+    //        setting the value to 0 will mean that @swapFee will be used for fees while setting the value to 1000 will
+    //        mean @tokenSwapFee will be used and hence no fees.
     function changeTokenSwapFee (address tokenAddress, uint256 newFee) external onlyOwner {
         require(_tokenToPricefeed[tokenAddress] != address(0), 'token not mapped');
         require(
@@ -63,18 +73,9 @@ contract ChainlinkSwap is Ownable {
         emit TokenSwapFeeChanged(tokenAddress, newFee, msg.sender);
     }
 
-    function blacklistUser (address userAddress) external onlyOwner {
-        require(!_blacklisted[userAddress]);
-        _blacklisted[userAddress] = true;
-        emit BlacklistStateChanged(userAddress, true, msg.sender);
-    }
-
-    function unblacklistUser (address userAddress) external onlyOwner {
-        require(_blacklisted[userAddress]);
-        _blacklisted[userAddress] = false;
-        emit BlacklistStateChanged(userAddress, false, msg.sender);
-    }
-
+    // provide liquidity of the token to contract
+    // requirements - amount should be greater than 0
+    //                tokenAddress should be mapped
     function provideLiquidity (address tokenAddress, uint256 amount) public onlyOwner {
         require(amount > 0, 'cannot transfer 0');
         require(_tokenToPricefeed[tokenAddress] != address(0), 'address is not mapped');
@@ -83,6 +84,8 @@ contract ChainlinkSwap is Ownable {
         emit LiquidityProvided(tokenAddress, amount, msg.sender);
     }
 
+    // provide liquidity of tokens to contract
+    // requirements - length of the tokenAddress and amount arrays should be the same
     function provideLiquidityBatch (address[] calldata tokenAddress, uint256[] calldata amount) external {
         require(tokenAddress.length == amount.length, "length mismatch");
         for (uint256 i = 0; i < tokenAddress.length; i++) {
@@ -90,6 +93,9 @@ contract ChainlinkSwap is Ownable {
         }
     }
 
+    // withdraw liquidity of the token to owner wallet
+    // requirements - amount should be greater than 0
+    //                tokenAddress should be mapped
     function withdrawLiquidity (address tokenAddress, uint256 amount) public onlyOwner {
         require(amount > 0, 'cannot withdraw 0');
         require(_tokenToPricefeed[tokenAddress] != address(0), 'address is not mapped');
@@ -98,6 +104,8 @@ contract ChainlinkSwap is Ownable {
         emit LiquidityWithdrawn(tokenAddress, amount, msg.sender);
     }
 
+    // withdraw liquidity of tokens to owner wallet
+    // requirements - length of the tokenAddress and amount arrays should be the same
     function withdrawLiquidityBatch (address[] calldata tokenAddress, uint256[] calldata amount) external {
         require(tokenAddress.length == amount.length, "length mismatch");
         for (uint256 i = 0; i < tokenAddress.length; i++) {
@@ -105,8 +113,8 @@ contract ChainlinkSwap is Ownable {
         }
     }
 
+    // swap unknown amount of "sell" tokens with known amount of "buy" tokens
     function swapBuyForSell (address tokenToBuy, address tokenToSell, uint256 amountOfTokenToBuy) external {
-        require(!_blacklisted[msg.sender] && !_blacklisted[tx.origin], 'sender or origin blacklisted');
         address tokenToBuyPricefeed = _tokenToPricefeed[tokenToBuy];
         address tokenToSellPricefeed = _tokenToPricefeed[tokenToSell];
         require (tokenToBuyPricefeed != address(0) && tokenToSellPricefeed != address(0), "token not mapped");
@@ -133,8 +141,8 @@ contract ChainlinkSwap is Ownable {
         emit TokenSwapped(tokenToBuy, tokenToSell, amountOfTokenToBuy, newAmountOfTokenToSell);
     }
 
+    // swap known amount of "sell" tokens with unknown amount of "buy" tokens
     function swapSellForBuy (address tokenToSell, address tokenToBuy, uint256 amountOfTokenToSell) external {
-        require(!_blacklisted[msg.sender] && !_blacklisted[tx.origin], 'sender or origin blacklisted');
         address tokenToBuyPricefeed = _tokenToPricefeed[tokenToBuy];
         address tokenToSellPricefeed = _tokenToPricefeed[tokenToSell];
         require (tokenToBuyPricefeed != address(0) && tokenToSellPricefeed != address(0), "token not mapped");
