@@ -4,26 +4,32 @@ import "@nomicfoundation/hardhat-toolbox";
 const dotenv = require("dotenv");
 dotenv.config({path: __dirname + '/.env'});
 
-const ALCHEMY_PROVIDER: string = process.env.ALCHEMY_PROVIDER;
-
 const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",
 
     networks: {
-        localhost: {
-            url: "http://127.0.0.1:8545"
-        },
         hardhat: {
             forking: {
-                url: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_PROVIDER}`,
+                url: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_PROVIDER}`,
             }
         },
+        polygon: {
+            url: "https://polygon-rpc.com/",
+            chainId: 137,
+            accounts: [process.env.PRIVATE_KEY],
+        },
+        mumbai: {
+            url: "https://polygon-mumbai.infura.io/v3/4458cf4d1689497b9a38b1d6bbf05e78",
+            chainId: 80001,
+            accounts: [process.env.PRIVATE_KEY],
+        }
     },
     solidity: {
-        version: "0.8.0",
+        version: "0.8.7",
         settings: {
             optimizer: {
-                enabled: true
+                enabled: true,
+                runs: 1000000,
             }
         }
     },
